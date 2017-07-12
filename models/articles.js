@@ -1,26 +1,21 @@
-// require mongoose
-var mongoose = require('mongoose')
-	, Schema = mongoose.Schema;
+var mongoose = require("mongoose");
+var Schema = mongoose.Schema;
 
-// new Schema
-var SavedArticleSchema = Schema({
-	title: {
-		type: String,
-		required: true
-	},
-	date: {
-		type: String,
-		required: true
-	},
-	url: {
-		type: String,
-		required: true,
-		unique: true // make sure the article is not repeated again
-	}
+var ArticleSchema = new Schema({
+  title: {
+	type: String,
+	require: true
+  },
+  date: {
+	type: String,
+	require: true
+  },
+  url: {
+	type: String,
+	require: true,
+	unique: true 
+  },
 });
 
-// use the above schema to make the SavedArticle model
-var SavedArticle = mongoose.model('SavedArticle', SavedArticleSchema);
-
-// export the model so the server can use it
-module.exports = SavedArticle;
+var Article = mongoose.model("Article", ArticleSchema);
+module.exports = Article;

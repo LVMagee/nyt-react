@@ -1,62 +1,98 @@
-// Dependencies
-var path = require('path');
-var bodyParser = require('body-parser');
+'use strict'
 
-// Initialize Express app
-var express = require('express');
-var app = express();
+// Include Server Dependencies
+const express = require("express");
+const bodyParser = require("body-parser");
+const logger = require("morgan");
+const mongoose = require("mongoose");
 
-// Require mongoose and mongodb objectid
-var mongoose = require('mongoose');
+// Require Article Schema
+const Article = require("./models/Article");
 
-// Database configuration
-mongoose.connect('mongodb://localhost/nyt-react');
+// Create Instance of Express
+const app = express();
+// Sets an initial port.
+const PORT = process.env.PORT || 8080;
+
+// Run Morgan for Logging
+app.use(logger("dev"));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.text());
+app.use(bodyParser.json({ type: "application/vnd.api+json" }));
+
+app.use(express.static("./public"));
+
+// -------------------------------------------------
+
+// MongoDB Configuration configuration (Change this URL to your own DB)
+mongoose.connect("mongodb://localhost/nytsearchmong");
 var db = mongoose.connection;
 
-// Show any mongoose errors
-db.on('error', function(err) {
-  // console.log('Database Error:', err);
+db.on("error", function(err) {
+  console.log("Mongoose Error: ", err);
 });
 
-// Dev and prod middleware
-if (process.env.NODE_ENV === 'production') {
-  var compression = require('compression');
-  app.use(compression());
-} else {
-  var config = require('./webpack.config.dev');
-  var webpack = require('webpack');
-  var compiler = webpack(config);
-  var webpackDevMiddleware = require('webpack-dev-middleware');
-  var webpackHotMiddleware = require('webpack-hot-middleware');
-  app.use(webpackDevMiddleware(compiler, {noInfo: true, publicPath: config.output.publicPath}));
-  app.use(webpackHotMiddleware(compiler));
-}
-
-// Express middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
-app.use(express.static('public'));
-
-// Main route -> send main page
-app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, './public', 'index.html'))
+db.once("open", function() {
+  console.log("Mongoose connection successful.");
 });
 
-// When users want to see saved articles
-app.get('/api/saved', require('./routes/getSaved'));
+// -------------------------------------------------
 
-// When user hits save
-app.post('/api/saved', require('./routes/postSaved'));
+// Route to get all saved articles.
+app.get("/api/saved", function(req, res) {
 
-// When user hits delete
-app.delete('/api/saved/:id', require('./routes/deleteSaved'));
+  // We will find all the records, sort it in descending order, then limit the records to 5
+  Article.find({}).limit(10).exec(function(err, doc) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      res.send(doc);
+    }
+  });
+});
 
-// Listen on port 3000 or env port
-var PORT = process.env.PORT || 3000;
+// Main "/" Route. Redirects user to rendered React application.
+app.get("*", function(req, res) {
+  res.sendFile(__dirname + "/public/index.html");
+});
 
-app.listen(PORT, function(error) {
-  if (error) throw error;
-  console.log('App running on port ' + PORT);
+// Route to save articles from searches.
+app.post("/api/saved", function(req, res) {
+  console.log("Article title: " + req.body.title);
+  console.log("Article date: " + req.body.date);
+  console.log("Article url: ") + req.body.url;
+
+  // Save article.
+  Article.create({
+    title: req.body.title,
+    date: req.body.date,
+    url: req.body.url
+  }, function(err) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      res.send("Saved Article");
+    }
+  });
+});
+
+// Route to delete saved article.
+app.delete("/api/saved/:id", function(req, res) {
+
+  console.log("Article ID to delete: " + req.params.id);
+
+  Article.findByIdAndRemove(req.params.id, function (err, response) {
+    if(err){
+      res.send("Delete didn't work: " + err);
+    }
+    res.send(response);
+  });
+});
+
+// Listener.
+app.listen(PORT, () => {
+  console.log("App listening on PORT: " + PORT);
 });
