@@ -5,7 +5,7 @@ import Search from "./children/Search";
 import Saved from "./children/Saved";
 
 // Helper Function
-import helpers from "./utils/helpers";
+import helpers from "./utils/helper";
 
 class Main extends React.Component {
 

@@ -7,7 +7,8 @@ const logger = require("morgan");
 const mongoose = require("mongoose");
 
 // Require Article Schema
-const Article = require("./models/Article");
+
+const Article = require("./models/Articles");
 
 // Create Instance of Express
 const app = express();
